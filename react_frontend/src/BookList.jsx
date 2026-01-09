@@ -54,98 +54,130 @@ const BookList = () => {
         try {
             await deleteBook(id);
             setBooks(books.filter((book) => book._id?.$oid !== id && book.id !== id));
-            loadBooks(); // Reload to be sure
+            loadBooks();
         } catch (error) {
             console.error(error);
         }
     };
 
     return (
-        <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-xl rounded-xl">
-            <h2 className="text-3xl font-extrabold text-gray-900 mb-6 text-center">Library Books</h2>
-
+        <div className="max-w-6xl mx-auto">
             {/* Create/Edit Book Form */}
-            <form onSubmit={handleSubmit} className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <h3 className="text-lg font-semibold mb-4 text-gray-700">{editingId ? 'Edit Book' : 'Add a New Book'}</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input
-                        type="text"
-                        name="title"
-                        placeholder="Title"
-                        value={newBook.title}
-                        onChange={handleInputChange}
-                        className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                    <input
-                        type="text"
-                        name="author"
-                        placeholder="Author"
-                        value={newBook.author}
-                        onChange={handleInputChange}
-                        className="p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        required
-                    />
-                    <div className="md:col-span-2">
-                        <input
-                            type="text"
+            <div className="glass-card rounded-3xl p-8 mb-8 shadow-2xl border border-purple-500/20">
+                <h2 className="text-3xl font-bold mb-6 gradient-text">
+                    {editingId ? '✏️ Edit Book' : '➕ Add New Book'}
+                </h2>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-300 mb-2">Book Title</label>
+                            <input
+                                type="text"
+                                name="title"
+                                placeholder="Enter book title..."
+                                value={newBook.title}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                required
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-300 mb-2">Author Name</label>
+                            <input
+                                type="text"
+                                name="author"
+                                placeholder="Enter author name..."
+                                value={newBook.author}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-300 mb-2">Description</label>
+                        <textarea
                             name="description"
-                            placeholder="Description"
+                            placeholder="Enter book description..."
                             value={newBook.description}
                             onChange={handleInputChange}
-                            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            rows="3"
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all resize-none"
                         />
                     </div>
-                </div>
-                <div className="flex gap-2">
-                    <button
-                        type="submit"
-                        className={`mt-4 w-full text-white py-2 px-4 rounded transition font-medium ${editingId ? 'bg-yellow-500 hover:bg-yellow-600' : 'bg-blue-600 hover:bg-blue-700'}`}
-                    >
-                        {editingId ? 'Update Book' : 'Add Book'}
-                    </button>
-                    {editingId && (
+
+                    <div className="flex gap-3 pt-2">
                         <button
-                            type="button"
-                            onClick={handleCancelEdit}
-                            className="mt-4 w-full bg-gray-500 text-white py-2 px-4 rounded hover:bg-gray-600 transition font-medium"
+                            type="submit"
+                            className={`flex-1 py-3 px-6 rounded-xl font-semibold text-white transition-all duration-300 ${editingId
+                                    ? 'bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg shadow-yellow-500/30'
+                                    : 'btn-gradient shadow-lg shadow-purple-500/30'
+                                }`}
                         >
-                            Cancel
+                            {editingId ? '💾 Update Book' : '➕ Add Book'}
                         </button>
-                    )}
-                </div>
-            </form>
+                        {editingId && (
+                            <button
+                                type="button"
+                                onClick={handleCancelEdit}
+                                className="px-6 py-3 bg-gray-600/50 text-white rounded-xl hover:bg-gray-600/70 transition-all font-semibold"
+                            >
+                                ✖️ Cancel
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
 
             {/* Book List */}
-            <ul className="space-y-4">
-                {books.map((book) => {
-                    // Handle potential ID differences (Mongoid might return $oid or just a string id)
-                    const bookId = book.id || book._id?.$oid || book._id;
-                    return (
-                        <li key={bookId} className="p-5 border border-gray-200 rounded-lg hover:shadow-lg transition bg-white flex justify-between items-center group">
-                            <div>
-                                <h3 className="text-xl font-bold text-gray-800">{book.title}</h3>
-                                <p className="text-gray-600 italic">by {book.author}</p>
-                                <p className="text-gray-500 mt-1">{book.description}</p>
+            {books.length === 0 ? (
+                <div className="glass-card rounded-3xl p-16 text-center">
+                    <div className="text-6xl mb-4">📚</div>
+                    <h3 className="text-2xl font-bold text-gray-300 mb-2">No Books Yet</h3>
+                    <p className="text-gray-400">Add your first book to get started!</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {books.map((book) => {
+                        const bookId = book.id || book._id?.$oid || book._id;
+                        return (
+                            <div
+                                key={bookId}
+                                className="glass-card rounded-2xl p-6 hover:scale-105 transition-all duration-300 group hover:shadow-2xl hover:shadow-purple-500/20 border border-purple-500/20"
+                            >
+                                <div className="mb-4">
+                                    <h3 className="text-2xl font-bold text-white mb-2 line-clamp-2">
+                                        {book.title}
+                                    </h3>
+                                    <p className="text-purple-300 font-medium mb-3">
+                                        ✍️ {book.author}
+                                    </p>
+                                    <p className="text-gray-400 text-sm line-clamp-3">
+                                        {book.description || 'No description available'}
+                                    </p>
+                                </div>
+
+                                <div className="flex gap-2 mt-4 pt-4 border-t border-white/10">
+                                    <button
+                                        onClick={() => handleEdit(book)}
+                                        className="flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-cyan-600 transition-all font-medium shadow-lg shadow-blue-500/30"
+                                    >
+                                        ✏️ Edit
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(bookId)}
+                                        className="flex-1 bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-red-600 hover:to-pink-600 transition-all font-medium shadow-lg shadow-red-500/30"
+                                    >
+                                        🗑️ Delete
+                                    </button>
+                                </div>
                             </div>
-                            <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition">
-                                <button
-                                    onClick={() => handleEdit(book)}
-                                    className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600"
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => handleDelete(bookId)}
-                                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </li>
-                    );
-                })}
-            </ul>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 };
