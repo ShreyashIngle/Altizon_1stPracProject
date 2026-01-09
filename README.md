@@ -6,18 +6,23 @@ A comprehensive full-stack web application built with Ruby on Rails backend and 
 
 ## 📋 Table of Contents
 
-- [Overview](#overview)
-- [Features](#features)
-- [Technology Stack](#technology-stack)
-- [Architecture](#architecture)
-- [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Running the Application](#running-the-application)
-- [API Documentation](#api-documentation)
-- [Elasticsearch Integration](#elasticsearch-integration)
-- [Sidekiq Background Jobs](#sidekiq-background-jobs)
-- [Project Structure](#project-structure)
-- [Development Commands](#development-commands)
+- [Overview](#-overview)
+- [Features](#-features)
+- [Technology Stack](#-technology-stack)
+- [Architecture](#-architecture)
+- [Prerequisites](#-prerequisites)
+- [Installation & Setup](#-installation--setup)
+- [Running the Application](#-running-the-application)
+- [API Documentation](#-api-documentation)
+- [Action Cable Real-time Notifications](#-action-cable-real-time-notifications)
+- [Elasticsearch Integration](#-elasticsearch-integration)
+- [Sidekiq Background Jobs](#-sidekiq-background-jobs)
+- [Project Structure](#-project-structure)
+- [Development Commands](#-development-commands)
+- [Quick Reference](#-quick-reference)
+- [Notes](#-notes)
+- [Contributing](#-contributing)
+- [Troubleshooting](#-troubleshooting)
 
 ---
 
@@ -56,6 +61,7 @@ The application provides complete CRUD (Create, Read, Update, Delete) functional
 
 ### Additional Features
 
+- **Real-time Notifications**: Action Cable WebSocket notifications for create/update/delete operations
 - **Full-Text Search**: Powered by Elasticsearch on all resources
 - **Real-time Updates**: React frontend with instant UI updates
 - **Background Processing**: Sidekiq for asynchronous job execution
@@ -298,6 +304,215 @@ bundle exec sidekiq &
 cd ../react_frontend
 npm run dev
 ```
+
+---
+
+## 🔔 Action Cable Real-time Notifications
+
+### Overview
+
+The application uses **Action Cable** (Rails' WebSocket framework) to provide real-time notifications when any CRUD operation occurs on Articles, Books, or Posts.
+
+### Features
+
+- **WebSocket Connection**: Persistent connection between client and server
+- **Automatic Notifications**: Triggered on create, update, and delete operations
+- **Background Processing**: Notifications sent via Sidekiq jobs
+- **Dual Client Support**: Works with both Rails views and React frontend
+- **Animated UI**: Smooth slide-in/slide-out animations for notifications
+
+### How It Works
+
+1. **Model Callbacks**: When a record is created, updated, or deleted, the `Notificationable` concern triggers a notification
+2. **Sidekiq Job**: `NotificationJob` processes the notification asynchronously
+3. **Action Cable Broadcast**: The job broadcasts to the `notifications` channel
+4. **Client Subscription**: Both Rails and React apps subscribe to receive notifications
+5. **UI Display**: Notifications appear in the top-right corner with auto-dismiss
+
+### Backend Implementation
+
+#### Notificationable Concern
+
+**Location**: `app/models/concerns/notificationable.rb`
+
+All models (Article, Book, Post) include this concern:
+
+```ruby
+module Notificationable
+  extend ActiveSupport::Concern
+
+  included do
+    after_create_commit  -> { notify("#{self.class.name} created: #{title}") }
+    after_update_commit  -> { notify("#{self.class.name} updated: #{title}") }
+    after_destroy_commit -> { notify("#{self.class.name} deleted: #{title}") }
+  end
+
+  private
+
+  def notify(message)
+    NotificationJob.perform_async({
+      "model" => self.class.name,
+      "message" => message,
+      "id" => id.to_s,
+      "at" => Time.current.strftime("%H:%M:%S")
+    })
+  end
+end
+```
+
+#### Notification Channel
+
+**Location**: `app/channels/notification_channel.rb`
+
+```ruby
+class NotificationChannel < ApplicationCable::Channel
+  def subscribed
+    stream_from "notifications"
+  end
+end
+```
+
+#### Notification Job
+
+**Location**: `app/jobs/notification_job.rb`
+
+```ruby
+class NotificationJob
+  include Sidekiq::Job
+
+  def perform(payload)
+    ActionCable.server.broadcast("notifications", payload)
+  end
+end
+```
+
+### Frontend Implementation
+
+#### Rails Frontend
+
+**Location**: `app/javascript/channels/notification_channel.js`
+
+```javascript
+import consumer from "./consumer"
+
+// Singleton pattern to prevent duplicate subscriptions
+if (!window.__notificationChannelSubscribed__) {
+  window.__notificationChannelSubscribed__ = true
+  
+  consumer.subscriptions.create("NotificationChannel", {
+    connected() {
+      console.log("ActionCable connected ✅")
+    },
+
+    disconnected() {
+      window.__notificationChannelSubscribed__ = false
+    },
+
+    received(data) {
+      console.log("Notification received:", data)
+      window.dispatchEvent(new CustomEvent('notification', { detail: data }))
+    }
+  })
+}
+```
+
+#### React Frontend
+
+**Location**: `react_frontend/src/notification.js`
+
+```javascript
+import * as ActionCable from "@rails/actioncable";
+
+const cable = ActionCable.createConsumer("ws://localhost:3000/cable");
+let notificationSubscription = null;
+
+export const subscribeToNotifications = (callback) => {
+  if (!notificationSubscription) {
+    notificationSubscription = cable.subscriptions.create("NotificationChannel", {
+      connected() {
+        console.log("Connected to ActionCable ✅");
+      },
+      received(data) {
+        console.log("Notification received:", data);
+        callback(data);
+      },
+    });
+  }
+  return notificationSubscription;
+};
+```
+
+**Component**: `react_frontend/src/components/Notifications.jsx`
+
+- Auto-dismiss after 3 seconds
+- Smooth slide-in/slide-out animations
+- Tailwind CSS styling
+
+### Notification Payload
+
+Each notification contains:
+
+```json
+{
+  "model": "Book",
+  "message": "Book created: The Hobbit",
+  "id": "6960a426f5be767530a63ded",
+  "at": "12:15:58"
+}
+```
+
+### Testing Notifications
+
+1. **Start all services**:
+   ```bash
+   # Terminal 1: Rails server
+   bin/rails server
+   
+   # Terminal 2: Sidekiq
+   bundle exec sidekiq
+   
+   # Terminal 3: React frontend
+   cd ../react_frontend && npm run dev
+   ```
+
+2. **Open the application** in your browser
+
+3. **Perform any CRUD operation**:
+   - Create a new book/article/post
+   - Update an existing record
+   - Delete a record
+
+4. **Watch for notifications** in the top-right corner
+
+### WebSocket Connection URL
+
+- **Rails App**: `ws://localhost:3000/cable`
+- **React App**: Connects to `ws://localhost:3000/cable`
+
+### Troubleshooting
+
+#### Not Receiving Notifications
+
+1. **Check Sidekiq is running**:
+   ```bash
+   bundle exec sidekiq
+   ```
+
+2. **Check Redis is running**:
+   ```bash
+   docker-compose ps redis
+   ```
+
+3. **Check browser console** for connection errors
+
+4. **Verify WebSocket connection**:
+   - Open browser DevTools → Network → WS tab
+   - Look for `/cable` connection
+
+#### Duplicate Notifications
+
+- **Close extra browser tabs** - each tab creates a separate WebSocket connection
+- **Use only one frontend** - don't run both Rails and React frontends simultaneously if you want single notifications
 
 ---
 
