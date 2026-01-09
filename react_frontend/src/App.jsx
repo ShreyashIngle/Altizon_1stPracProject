@@ -2,6 +2,7 @@ import React from 'react';
 import BookList from './BookList';
 import PostList from './PostList';
 import ArticleList from './ArticleList';
+import Notifications from "./components/Notifications";
 import WelcomeMessage from './WelcomeMessage';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
         <BookList />
         <PostList />
         <ArticleList />
+        <Notifications />
       </div>
     </div>
   );

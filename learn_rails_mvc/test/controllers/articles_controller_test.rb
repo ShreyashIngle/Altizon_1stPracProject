@@ -5,3 +5,5 @@ class ArticlesControllerTest < ActionDispatch::IntegrationTest
   #   assert true
   # end
 end
+MongoDB doesn't require migrations like SQL databases
+# Collections are created automatically when first accessed

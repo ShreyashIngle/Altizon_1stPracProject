@@ -5,6 +5,10 @@ class Book
   include Elasticsearch::Model
   include Elasticsearch::Model::Callbacks
 
+  include Notificationable  # ✅ Include for real-time notifications
+
+  
+
   field :title,       type: String
   field :author,      type: String
   field :description, type: String

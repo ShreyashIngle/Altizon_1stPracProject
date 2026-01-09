@@ -1,29 +1,17 @@
-<!DOCTYPE html>
-<html>
-  <head>
-    <title><%= content_for(:title) || "Learn Rails Mvc" %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="Learn Rails Mvc">
-    <meta name="mobile-web-app-capable" content="yes">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
+<div x-data="{ notifications: [] }" 
+     x-init="
+        window.addEventListener('notification', event => {
+          notifications.push(event.detail)
+          // Optional: auto remove after 5s
+          setTimeout(() => notifications.shift(), 5000)
+        })
+     "
+     class="fixed top-4 right-4 space-y-2 z-50">
 
-    <%= yield :head %>
-
-    <%# Enable PWA manifest for installable apps (make sure to enable in config/routes.rb too!) %>
-    <%#= tag.link rel: "manifest", href: pwa_manifest_path(format: :json) %>
-
-    <link rel="icon" href="/icon.png" type="image/png">
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="/icon.png">
-
-    <%# Includes all stylesheet files in app/assets/stylesheets %>
-    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
-    <%= javascript_importmap_tags %>
-  </head>
-
-  <body>
-    <%= yield %>
-  </body>
-</html>
+  <template x-for="notif in notifications" :key="notif.id">
+    <div class="bg-blue-500 text-white p-3 rounded shadow">
+      <strong x-text="notif.model"></strong>: <span x-text="notif.message"></span>
+      <small class="block text-xs" x-text="notif.at"></small>
+    </div>
+  </template>
+</div>
