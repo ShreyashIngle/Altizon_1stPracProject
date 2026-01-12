@@ -30,16 +30,16 @@ services:
       - esdata:/usr/share/elasticsearch/data
 
 
-  # portainer:
-  #   image: portainer/portainer-ce:latest
-  #   ports:
-  #     - "9000:9000"
-  #   volumes:
-  #     - /var/run/docker.sock:/var/run/docker.sock
-  #     - portainer_data:/data
+  portainer:
+    image: portainer/portainer-ce:latest
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
 
 volumes:
   mongodb_data:
   redis_data:
   esdata:
-  # portainer_data:
+  portainer_data:

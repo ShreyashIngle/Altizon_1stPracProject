@@ -20,6 +20,7 @@ gem "jbuilder"
 
 gem "sidekiq"
 gem "sidekiq-scheduler"
+gem "whenever", require: false
 
 gem "elasticsearch"
 gem "elasticsearch-model"
